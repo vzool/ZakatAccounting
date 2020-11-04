@@ -67,6 +67,7 @@ def sub(value, debug=False):
 		add(-value, step)
 		return step
 
+	# Negative is a Hole, Zero is a Plain and Positive is a Mountain
 	for index in range(-1, limit, -1):
 
 		if rest <= box[index]['rest']:
@@ -74,6 +75,7 @@ def sub(value, debug=False):
 			addLog(-rest, step, index)
 			break
 		else:
+			
 			total = balance() # debug
 			current = box[index]['rest']
 			change = current - rest
@@ -82,20 +84,52 @@ def sub(value, debug=False):
 				print("Loop: index(%d) - current(%d) - rest(%d) - change(%d) - total(%d) - limit(%d) - bcount(%d)" % 
 					(index, current, rest, change, total, limit, bcount)) # debug
 
+			# if current is less than zero then put in the hole
 			if current < 0:
 				box[index]['rest'] += -rest
 				addLog(-rest, step, index)
 				break
-
+			# if change is less than or equal zero 
 			if change <= 0:
-				if total < 0:
-					box[-1]['rest'] = change
-					addLog(-rest, step, index)
-					break
+				
+				# if total < 0:
+				# 	pp.pprint(box[index:-1])
+				# 	highestValue = -1	
+				# 	highestIndex = -1	
+				# 	for b in box[index:-1]:
+				# 		if b['rest'] > highestValue:
+				# 			highestValue = b['rest']
+				# 			highestIndex = b['index']
+
+				# 	print("Negative-Total: index(%d) - current(%d) - rest(%d) - change(%d) - total(%d) - limit(%d) - bcount(%d) - highestValue(%d), highestIndex(%d)" % 
+				# 		(index, current, rest, change, total, limit, bcount, highestValue, highestIndex))
+
+				# 	box[-1]['rest'] = change
+				# 	addLog(-rest, step, index)
+				# 	break
 
 				extra = 0
 				rest = -change
 
+				highestValue = -1	
+				highestIndex = -1
+				lowestValue = -1	
+				lowestIndex = -1
+				for b in box[0:index]:
+					if b['rest'] < lowestValue:
+						lowestValue = b['rest']
+						lowestIndex = b['index']
+				for b in box[lowestIndex:index]:
+					if b['rest'] > highestValue:
+						highestValue = b['rest']
+						highestIndex = b['index']
+
+				if highestValue >= 0:
+					print("SCAN: index(%d) - current(%d) - rest(%d) - change(%d) - total(%d) - limit(%d) - bcount(%d) - highValue(%d), highIndex(%d), lowValue(%d), lowIndex(%d), WRange(%d), LRange(%d)" % 
+						(index, current, rest, change, total, limit, bcount, highestValue, highestIndex, lowestValue, lowestIndex, len(box[0:index]), len(box[lowestIndex:index])))
+
+				# In reverse Detection(A) about first item in second position
+				# So, we can put the rest in the hole.
 				if index-1 == limit:
 					extra = -rest
 					print("HIT(A): index(%d) - limit(%d) - change(%d) - extra(%d) - bcount(%d)" % (index, limit, change, extra, bcount))
@@ -105,6 +139,8 @@ def sub(value, debug=False):
 					box[index]['rest'] = 0
 				addLog(-current, step, index)
 
+				# In reverse Detection(B) about first item in second position.
+				# So, we log things in order.
 				if index-1 == limit:
 					print("HIT(B): index(%d) - limit(%d) - change(%d) - extra(%d) - bcount(%d)" % (index, limit, change, extra, bcount))
 					addLog(extra, step, -1)
@@ -122,19 +158,29 @@ def revert(step):
 		del log[step]
 
 def check():
+	# Rule1: log = box
 	bsum = balance()
 	total = 0
 	for step in log:
 		for move in log[step]:
 			total += move['value']
 	if total == bsum:
-		print('[CORRECT]: Valid chain total_log(%d) == balance(%d) : box_len(%d) - log_len(%d)' % (total, bsum, len(box), len(log)))
+		print('Rule1 [CORRECT]: Valid chain total_log(%d) == balance(%d) : box_len(%d) - log_len(%d)' % (total, bsum, len(box), len(log)))
 	else:
-		print('[ERROR]: Invalid chain total_log(%d) != balance(%d) : box_len(%d) - log_len(%d)' % (total, bsum, len(box), len(log)))
+		print('Rule1 [ERROR]: Invalid chain total_log(%d) != balance(%d) : box_len(%d) - log_len(%d)' % (total, bsum, len(box), len(log)))
 		print('#====================== [REPORT] ======================: ')
 		pp.pprint(box)
 		pp.pprint(log)
 	assert total == bsum
+	# Rule2: no Hole after Mountain
+	bcount = len(box)
+	for a in box:
+		if a['rest'] < 0:
+			for b in box[a['index']:bcount]:
+				if b['rest'] > b['rest']:
+					print('Rule2 b(%d) > a(%d)' % (b['rest'], a['rest']))
+					assert b['rest'] > c['rest']
+
 	return total == bsum
 
 def reset():
@@ -143,191 +189,226 @@ def reset():
 	log = {}
 	box = []
 
-print("############")
-print("# CASE #1  #")
-print("############")
+case0 = True
+case1 = True
+case2 = True
+case3 = True
+case4 = True
 
-check()
-add(50)
-assert box[0]['rest'] == 50
-check()
-add(100)
-assert box[0]['rest'] == 50
-assert box[1]['rest'] == 100
-check()
-add(250)
-assert box[0]['rest'] == 50
-assert box[1]['rest'] == 100
-assert box[2]['rest'] == 250
-assert balance() == 400
-check()
-sub(4000)
-assert box[0]['rest'] == 0
-assert box[1]['rest'] == 0
-assert box[2]['rest'] == -3600
-check()
-# pp.pprint(box)
-sub(1000)
-# pp.pprint(box)
-check()
-add(75)
-check()
-#pp.pprint(box)
-sub(100)
-check()
-#pp.pprint(box)
-sub(100)
-check()
-sub(3)
-check()
-add(500)
-pp.pprint(box)
-# print('balance: %d' % balance())
-check()
-sub(2000)
-check()
-add(6000)
-check()
-sub(6001)
-pp.pprint(box)
-print('\nLog:\n')
-pp.pprint(log)
-print('balance: %d' % balance())
-print('\nRevert:\n')
-check()
-revert(list(log.keys())[0])
-check()
-for step1 in list(log.keys()):
-	revert(step1)
-	check()
-check()
-pp.pprint(box)
-pp.pprint(log)
-print('balance: %d' % balance())
+if case0:
+	print("############")
+	print("# CASE #0  #")
+	print("############")
 
-reset()
-
-print("############")
-print("# CASE #2  #")
-print("############")
-
-pp.pprint(box)
-pp.pprint(log)
-
-check()
-add(50)
-assert box[0]['rest'] == 50
-sub(51)
-assert box[0]['rest'] == -1
-# pp.pprint(box)
-# pp.pprint(log)
-check()
-# exit()
-add(100)
-assert box[0]['rest'] == -1
-assert box[1]['rest'] == 100
-check()
-add(250)
-assert box[0]['rest'] == -1
-assert box[1]['rest'] == 100
-assert box[2]['rest'] == 250
-assert balance() == 349
-check()
-sub(4000, True)
-pp.pprint(box)
-pp.pprint(log)
-assert box[0]['rest'] == -3651
-assert box[1]['rest'] == 0
-assert box[2]['rest'] == 0
-check()
-sub(1000)
-# pp.pprint(box)
-check()
-add(75)
-check()
-#pp.pprint(box)
-sub(100)
-check()
-#pp.pprint(box)
-sub(100)
-check()
-sub(3)
-check()
-add(500)
-pp.pprint(box)
-# print('balance: %d' % balance())
-check()
-sub(2000)
-check()
-add(6000)
-check()
-sub(6001)
-pp.pprint(box)
-print('\nLog:\n')
-pp.pprint(log)
-print('balance: %d' % balance())
-print('\nRevert:\n')
-check()
-revert(list(log.keys())[0])
-check()
-for step1 in list(log.keys()):
-	revert(step1)
-	check()
-check()
-pp.pprint(box)
-pp.pprint(log)
-print('balance: %d' % balance())
-
-reset()
-
-print("############")
-print("# CASE #3  #")
-print("############")
-
-step = sub(100, True)
-assert step >  0
-assert step != None
-assert box[0]['rest'] == -100
-assert log[step][0]['index'] == 0
-assert log[step][0]['value'] == -100
-step = sub(50)
-assert step >  0
-assert step != None
-assert box[0]['rest'] == -150
-assert log[step][0]['index'] == 0
-assert log[step][0]['value'] == -50
-step = sub(25)
-assert step >  0
-assert step != None
-assert box[0]['rest'] == -175
-assert log[step][0]['index'] == 0
-assert log[step][0]['value'] == -25
-step = add(1000)
-assert step >  0
-assert step != None
-assert box[1]['rest'] == 1000
-assert log[step][0]['index'] == 1
-assert log[step][0]['value'] == 1000
-pp.pprint(box)
-pp.pprint(log)
-
-reset()
-
-print("############")
-print("# CASE #4  #")
-print("############")
-
-for i in range(9):
-	# if i % 2 == 0:
-	reset()
-	for j in range(1000):
-		x = int(random.uniform(0, 1) * 100000)
-		if x % 2 == 0:
-			add(x)
+	values = [50, 100, 250, -4000, -1000, 10000, 10000, -5000, -5000, -5000, -5000, -10, 75, -100, -100, -3, 500, -2000, 6000, -6001, 10000, -10001] 
+	for value in values:
+		if value > 0:
+			add(value)
 		else:
-			sub(x)
+			sub(-value)
 		check()
-	check()
 
 	pp.pprint(box)
 	pp.pprint(log)
+
+	reset()
+
+if case1:
+	print("############")
+	print("# CASE #1  #")
+	print("############")
+
+	check()
+	add(50)
+	assert box[0]['rest'] == 50
+	check()
+	add(100)
+	assert box[0]['rest'] == 50
+	assert box[1]['rest'] == 100
+	check()
+	add(250)
+	assert box[0]['rest'] == 50
+	assert box[1]['rest'] == 100
+	assert box[2]['rest'] == 250
+	assert balance() == 400
+	check()
+	sub(4000)
+	assert box[0]['rest'] == 0
+	assert box[1]['rest'] == 0
+	assert box[2]['rest'] == -3600
+	check()
+	# pp.pprint(box)
+	sub(1000)
+	# pp.pprint(box)
+	check()
+	add(75)
+	check()
+	#pp.pprint(box)
+	sub(100)
+	check()
+	#pp.pprint(box)
+	sub(100)
+	check()
+	sub(3)
+	check()
+	add(500)
+	pp.pprint(box)
+	# print('balance: %d' % balance())
+	check()
+	sub(2000)
+	check()
+	add(6000)
+	check()
+	sub(6001)
+	pp.pprint(box)
+	print('\nLog:\n')
+	pp.pprint(log)
+	print('balance: %d' % balance())
+	print('\nRevert:\n')
+	check()
+	revert(list(log.keys())[0])
+	check()
+	for step1 in list(log.keys()):
+		revert(step1)
+		check()
+	check()
+	pp.pprint(box)
+	pp.pprint(log)
+	print('balance: %d' % balance())
+
+	reset()
+
+if case2:
+	print("############")
+	print("# CASE #2  #")
+	print("############")
+
+	pp.pprint(box)
+	pp.pprint(log)
+
+	check()
+	add(50)
+	assert box[0]['rest'] == 50
+	sub(51)
+	assert box[0]['rest'] == -1
+	# pp.pprint(box)
+	# pp.pprint(log)
+	check()
+	# exit()
+	add(100)
+	assert box[0]['rest'] == -1
+	assert box[1]['rest'] == 100
+	check()
+	add(250)
+	assert box[0]['rest'] == -1
+	assert box[1]['rest'] == 100
+	assert box[2]['rest'] == 250
+	assert balance() == 349
+	check()
+	sub(4000, True)
+	pp.pprint(box)
+	pp.pprint(log)
+	assert box[0]['rest'] == -3651
+	assert box[1]['rest'] == 0
+	assert box[2]['rest'] == 0
+	check()
+	sub(1000)
+	# pp.pprint(box)
+	check()
+	add(75)
+	check()
+	#pp.pprint(box)
+	sub(100)
+	check()
+	#pp.pprint(box)
+	sub(100)
+	check()
+	sub(3)
+	check()
+	add(500)
+	pp.pprint(box)
+	# print('balance: %d' % balance())
+	check()
+	sub(2000)
+	check()
+	add(6000)
+	check()
+	sub(6001)
+	pp.pprint(box)
+	print('\nLog:\n')
+	pp.pprint(log)
+	print('balance: %d' % balance())
+	print('\nRevert:\n')
+	check()
+	revert(list(log.keys())[0])
+	check()
+	for step1 in list(log.keys()):
+		revert(step1)
+		check()
+	check()
+	pp.pprint(box)
+	pp.pprint(log)
+	print('balance: %d' % balance())
+
+	reset()
+
+if case3:
+	print("############")
+	print("# CASE #3  #")
+	print("############")
+
+	step = sub(100, True)
+	assert step >  0
+	assert step != None
+	assert box[0]['rest'] == -100
+	assert log[step][0]['index'] == 0
+	assert log[step][0]['value'] == -100
+	step = sub(50)
+	assert step >  0
+	assert step != None
+	assert box[0]['rest'] == -150
+	assert log[step][0]['index'] == 0
+	assert log[step][0]['value'] == -50
+	step = sub(25)
+	assert step >  0
+	assert step != None
+	assert box[0]['rest'] == -175
+	assert log[step][0]['index'] == 0
+	assert log[step][0]['value'] == -25
+	step = add(1000)
+	assert step >  0
+	assert step != None
+	assert box[1]['rest'] == 1000
+	assert log[step][0]['index'] == 1
+	assert log[step][0]['value'] == 1000
+	pp.pprint(box)
+	pp.pprint(log)
+
+	reset()
+
+if case4:
+	print("############")
+	print("# CASE #4  #")
+	print("############")
+
+	for i in range(9):
+		# if i % 2 == 0:
+		reset()
+		for j in range(1000):
+			x = int(random.uniform(0, 1) * 100000)
+			if x % 2 == 0:
+				add(x)
+			else:
+				sub(x, x==93093)
+			check()
+		check()
+
+		pp.pprint(box)
+		pp.pprint(log)
+
+		for step1 in list(log.keys()):
+			revert(step1)
+			check()
+
+		pp.pprint(box)
+		pp.pprint(log)
