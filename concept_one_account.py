@@ -67,6 +67,8 @@ def sub(value, debug=False):
 		add(-value, step)
 		return step
 
+	# seekIndex = seekPlain()
+
 	# Negative is a Hole, Zero is a Plain and Positive is a Mountain
 	for index in range(-1, limit, -1):
 
@@ -86,7 +88,10 @@ def sub(value, debug=False):
 
 			# if current is less than zero then put in the hole
 			if current < 0:
+				# if seekIndex != None:
+				# 	index = seekIndex
 				box[index]['rest'] += -rest
+				stats()
 				addLog(-rest, step, index)
 				break
 			# if change is less than or equal zero 
@@ -111,22 +116,22 @@ def sub(value, debug=False):
 				extra = 0
 				rest = -change
 
-				highestValue = -1	
-				highestIndex = -1
-				lowestValue = -1	
-				lowestIndex = -1
-				for b in box[0:index]:
-					if b['rest'] < lowestValue:
-						lowestValue = b['rest']
-						lowestIndex = b['index']
-				for b in box[lowestIndex:index]:
-					if b['rest'] > highestValue:
-						highestValue = b['rest']
-						highestIndex = b['index']
+				# highestValue = -1	
+				# highestIndex = -1
+				# lowestValue = -1	
+				# lowestIndex = -1
+				# for b in box[0:index]:
+				# 	if b['rest'] < lowestValue:
+				# 		lowestValue = b['rest']
+				# 		lowestIndex = b['index']
+				# for b in box[lowestIndex:index]:
+				# 	if b['rest'] > highestValue:
+				# 		highestValue = b['rest']
+				# 		highestIndex = b['index']
 
-				if highestValue >= 0:
-					print("SCAN: index(%d) - current(%d) - rest(%d) - change(%d) - total(%d) - limit(%d) - bcount(%d) - highValue(%d), highIndex(%d), lowValue(%d), lowIndex(%d), WRange(%d), LRange(%d)" % 
-						(index, current, rest, change, total, limit, bcount, highestValue, highestIndex, lowestValue, lowestIndex, len(box[0:index]), len(box[lowestIndex:index])))
+				# if highestValue >= 0:
+				# 	print("SCAN: index(%d) - current(%d) - rest(%d) - change(%d) - total(%d) - limit(%d) - bcount(%d) - highValue(%d), highIndex(%d), lowValue(%d), lowIndex(%d), WRange(%d), LRange(%d)" % 
+				# 		(index, current, rest, change, total, limit, bcount, highestValue, highestIndex, lowestValue, lowestIndex, len(box[0:index]), len(box[lowestIndex:index])))
 
 				# In reverse Detection(A) about first item in second position
 				# So, we can put the rest in the hole.
@@ -156,6 +161,7 @@ def revert(step):
 		for move in log[step]:
 			box[move['index']]['rest'] -= move['value']
 		del log[step]
+		vacuum()
 
 def check():
 	# Rule1: log = box
@@ -172,22 +178,71 @@ def check():
 		pp.pprint(box)
 		pp.pprint(log)
 	assert total == bsum
-	# Rule2: no Hole after Mountain
+	# Rule2: no Hole after Mountain [CANCELED]
+	# bcount = len(box)
+	# for a in box:
+	# 	if a['rest'] > 0:
+	# 		for b in box[a['index']:bcount]:
+	# 			if b['rest'] < 0:
+	# 				print('Rule2 b(%d) - index(%d) < a(%d) - index(%d)' % (b['rest'], b['index'], a['rest'], a['index']))
+	# 				assert b['rest'] < 0
+
+	return total == bsum
+
+def stats():
+	mountain = 0
+	hole = 0
+	plain = 0
+	for b in box:
+		if b['rest'] > 0:
+			mountain += 1
+		if b['rest'] < 0:
+			hole += 1
+		if b['rest'] == 0:
+			plain += 1
+	print("STATS: mountain(%d) - hole(%d) - plain(%d)" % (mountain, hole, plain))
+	return mountain, hole, plain
+
+def seekPlain():
 	bcount = len(box)
 	for a in box:
 		if a['rest'] < 0:
-			for b in box[a['index']:bcount]:
-				if b['rest'] > b['rest']:
-					print('Rule2 b(%d) > a(%d)' % (b['rest'], a['rest']))
-					assert b['rest'] > c['rest']
+			for b in box[a['index']: bcount]:
+				if b['rest'] > 0:
+					index = b['index'] - 1
+					print("SEEK: %d" % index)
+					return index
 
-	return total == bsum
+def vacuum():
+	print("Vacuum started")
+	for b in box:
+		isLogged = False
+		try:
+			for steps in log:
+				for step in steps:
+					if b['index'] == step['index']:
+						raise Exception("Break")
+		except:
+			isLogged = True
+			pass
+
+		if not isLogged:
+			print('Box Remove(%d) %d' % (b['index'], isLogged))
+			try:
+				del box[b['index']]
+			except:
+				pass
+
 
 def reset():
 	print("-- RESET --")
 	global log, box
 	log = {}
 	box = []
+
+###########################
+########## TESTS ##########
+###########################
 
 case0 = True
 case1 = True
@@ -403,12 +458,26 @@ if case4:
 			check()
 		check()
 
+		# stats()
+		# sub(2423228+18450+25406+73356+51369+1)
+
 		pp.pprint(box)
 		pp.pprint(log)
 
-		for step1 in list(log.keys()):
-			revert(step1)
+		seekPlain()
+
+		print('Balance: %d' % balance())
+		stats()
+
+		keys = list(log.keys())
+		while len(log) > 0:
+			index = int(random.random()*len(keys))
+			step = keys[index]
+			del keys[index]
+			revert(step)
 			check()
 
 		pp.pprint(box)
+		pp.pprint(log)
+		vacuum()
 		pp.pprint(log)
