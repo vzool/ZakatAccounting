@@ -256,10 +256,10 @@ def reset():
 ########## TESTS ##########
 ###########################
 
-case0 = not True
-case1 = not True
-case2 = not True
-case3 = not True
+case0 = True
+case1 = True
+case2 = True
+case3 = True
 case4 = True
 
 if case0:
