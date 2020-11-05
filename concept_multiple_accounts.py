@@ -7,6 +7,7 @@ account = {}
 log = {}
 
 def newStep():
+	print("STEP: %s" % step)
 	return time.time()
 
 def newAccountID():
@@ -25,7 +26,7 @@ def createAccount(name):
 def add(account_no, value, step=0):
 	print('add (%d)(%d): %d' % (account_no, len(account[account_no]['box']), value))
 	addLog(account_no, value, step)
-	account[account_no]['box'].append({'capital': value, 'rest': value, 'time': time.time()})
+	account[account_no]['box'].append({'index': len(account[account_no]['box']),'capital': value, 'rest': value, 'time': time.time()})
 	return step
 
 def addLog(account_no, value, step=0, index=0):

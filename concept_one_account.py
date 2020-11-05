@@ -213,26 +213,38 @@ def seekPlain():
 					print("SEEK: %d" % index)
 					return index
 
-def vacuum():
+def vacuum(debug=False):
 	print("Vacuum started")
 	for b in box:
 		isLogged = False
 		try:
-			for steps in log:
-				for step in steps:
+			for stepsKey in log:
+				for step in log[stepsKey]:
 					if b['index'] == step['index']:
+						isLogged = True
 						raise Exception("Break")
 		except:
-			isLogged = True
 			pass
 
 		if not isLogged:
-			print('Box Remove(%d) %d' % (b['index'], isLogged))
 			try:
 				del box[b['index']]
+				if debug:
+					print('Box Remove(%d) %d -- [DONE]' % (b['index'], isLogged))
 			except:
-				pass
+				if debug:
+					print('Box Remove(%d) %d -- [FAILED]' % (b['index'], isLogged))
 
+def distribution():
+	result = {}
+	# init
+	for b in box:
+		result[b['index']] = 0
+
+	for stepsKey in log:
+		for step in log[stepsKey]:
+			result[step['index']] += 1
+	return result
 
 def reset():
 	print("-- RESET --")
@@ -244,10 +256,10 @@ def reset():
 ########## TESTS ##########
 ###########################
 
-case0 = True
-case1 = True
-case2 = True
-case3 = True
+case0 = not True
+case1 = not True
+case2 = not True
+case3 = not True
 case4 = True
 
 if case0:
@@ -466,18 +478,19 @@ if case4:
 
 		seekPlain()
 
+		pp.pprint(distribution())
 		print('Balance: %d' % balance())
 		stats()
 
-		keys = list(log.keys())
-		while len(log) > 0:
-			index = int(random.random()*len(keys))
-			step = keys[index]
-			del keys[index]
-			revert(step)
-			check()
+		# keys = list(log.keys())
+		# while len(log) > 0:
+		# 	index = int(random.random()*len(keys))
+		# 	step = keys[index]
+		# 	del keys[index]
+		# 	revert(step)
+		# 	check()
 
-		pp.pprint(box)
-		pp.pprint(log)
-		vacuum()
-		pp.pprint(log)
+		# pp.pprint(box)
+		# pp.pprint(log)
+		# vacuum()
+		# pp.pprint(log)
