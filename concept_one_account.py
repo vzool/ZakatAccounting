@@ -1,6 +1,7 @@
 import time
 import pprint
 import random
+import collections
 
 random.seed(3)
 
@@ -14,12 +15,14 @@ def newStep():
 	print("STEP: %s" % step)
 	return step
 
-def add(value, step=0):
+def add(value, step=0, date=0):
 	print('add (%d): %d' % (len(box), value))
 	if step == 0:
 		step = newStep()
+	if date == 0:
+		date = time.time()
 	addLog(value, step=step)
-	box.append({'index': len(box),'capital': value, 'rest': value, 'time': time.time()})
+	box.append({'index': len(box),'capital': value, 'rest': value, 'time': date})
 	return step
 
 def addLog(value, step=0, index=0):
@@ -156,13 +159,6 @@ def sub(value, debug=False):
 
 	return step
 
-def revert(step):
-	if step in log.keys():
-		for move in log[step]:
-			box[move['index']]['rest'] -= move['value']
-		del log[step]
-		vacuum()
-
 def check():
 	# Rule1: log = box
 	bsum = balance()
@@ -213,14 +209,31 @@ def seekPlain():
 					print("SEEK: %d" % index)
 					return index
 
+def revert(step):
+	if step in log.keys():
+		total = 0
+		for move in log[step]:
+			total += move['value']
+			box[move['index']]['rest'] -= move['value']
+		print("Revert total(%d)" % total)
+		del log[step]
+		# vacuum(True)
+
 def vacuum(debug=False):
 	print("Vacuum started")
 	for b in box:
 		isLogged = False
 		try:
-			for stepsKey in log:
-				for step in log[stepsKey]:
-					if b['index'] == step['index']:
+			for step in log:
+				# print("Vacuum-step")
+				# pp.pprint(step)
+				for move in log[step]:
+					# print("Vacuum-move")
+					# pp.pprint(move)
+					if b['index'] == move['index']:
+						# print("Vacuum-match")
+						# pp.pprint(b)
+						# pp.pprint(move)
 						isLogged = True
 						raise Exception("Break")
 		except:
@@ -244,6 +257,8 @@ def distribution():
 	for stepsKey in log:
 		for step in log[stepsKey]:
 			result[step['index']] += 1
+	sorted_x = sorted(result.items(), key=lambda kv: kv[1])
+	result = collections.OrderedDict(sorted_x)
 	return result
 
 def reset():
