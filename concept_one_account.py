@@ -217,11 +217,12 @@ def revert(step):
 			box[move['index']]['rest'] -= move['value']
 		print("Revert total(%d)" % total)
 		del log[step]
-		# vacuum(True)
+		vacuum(True)
 
 def vacuum(debug=False):
 	print("Vacuum started")
 	for b in box:
+		index = b['index']
 		isLogged = False
 		try:
 			for step in log:
@@ -230,23 +231,30 @@ def vacuum(debug=False):
 				for move in log[step]:
 					# print("Vacuum-move")
 					# pp.pprint(move)
-					if b['index'] == move['index']:
+					if index == move['index']:
 						# print("Vacuum-match")
 						# pp.pprint(b)
 						# pp.pprint(move)
 						isLogged = True
 						raise Exception("Break")
 		except:
-			pass
+			isLogged = True
 
 		if not isLogged:
 			try:
-				del box[b['index']]
+				print(type(index))
+				del box[index]
+				# ReIndexing Log
+				for step in log:
+					for move in log[step]:
+						if move['index'] > index:
+							log[step]['index'] -= 1
 				if debug:
 					print('Box Remove(%d) %d -- [DONE]' % (b['index'], isLogged))
-			except:
+			except Exception as e:
 				if debug:
 					print('Box Remove(%d) %d -- [FAILED]' % (b['index'], isLogged))
+					pp.pprint(e)
 
 def distribution():
 	result = {}
@@ -254,9 +262,9 @@ def distribution():
 	for b in box:
 		result[b['index']] = 0
 
-	for stepsKey in log:
-		for step in log[stepsKey]:
-			result[step['index']] += 1
+	for step in log:
+		for move in log[step]:
+			result[move['index']] += 1
 	sorted_x = sorted(result.items(), key=lambda kv: kv[1])
 	result = collections.OrderedDict(sorted_x)
 	return result
