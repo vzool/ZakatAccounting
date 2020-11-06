@@ -224,31 +224,38 @@ def vacuum(debug=False):
 	for b in box:
 		index = b['index']
 		isLogged = False
-		try:
-			for step in log:
-				# print("Vacuum-step")
-				# pp.pprint(step)
-				for move in log[step]:
-					# print("Vacuum-move")
+		for step in log:
+			# print("Vacuum-step")
+			# pp.pprint(step)
+			isInnerLoopBreak = False
+			for move in log[step]:
+				# print("Vacuum-move")
+				# pp.pprint(move)
+				if index == move['index']:
+					# print("Vacuum-match")
+					# pp.pprint(b)
 					# pp.pprint(move)
-					if index == move['index']:
-						# print("Vacuum-match")
-						# pp.pprint(b)
-						# pp.pprint(move)
-						isLogged = True
-						raise Exception("Break")
-		except:
-			isLogged = True
+					print("Vacuum Log Found index(%d)" % index)
+					isLogged = True
+					isInnerLoopBreak = True
+					break
+			if isInnerLoopBreak:
+				break
 
 		if not isLogged:
 			try:
-				print(type(index))
+				if debug: print("v#1")
 				del box[index]
+				if debug: print("v#2")
 				# ReIndexing Log
 				for step in log:
+					if debug: print("v#3")
 					for move in log[step]:
+						if debug: print("v#4")
 						if move['index'] > index:
-							log[step]['index'] -= 1
+							if debug: print("v#5")
+							move['index'] -= 1
+							if debug: print("v#6")
 				if debug:
 					print('Box Remove(%d) %d -- [DONE]' % (b['index'], isLogged))
 			except Exception as e:
