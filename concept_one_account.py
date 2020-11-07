@@ -10,6 +10,11 @@ pp = pprint.PrettyPrinter()
 log = {}
 box = []
 
+# Constants
+PercentageCut 	= lambda 	: 0.025 # Zakat Cut in Lunar Year
+TimeCycle 		= lambda 	: 60*60*24*354.367056 # Lunar Year in seconds
+MoneyLimit 		= lambda x 	: 585*x # Silver Price in Local currency value
+
 def newStep():
 	step = time.time()
 	print("STEP: %s" % step)
@@ -22,7 +27,7 @@ def add(value, step=0, date=0):
 	if date == 0:
 		date = time.time()
 	addLog(value, step=step)
-	box.append({'index': len(box),'capital': value, 'rest': value, 'time': date})
+	box.append({'index': len(box),'capital': value, 'rest': value, 'time': date, 'last_zakat': 0, 'zakat_count': 0, 'zakat_total': 0})
 	return step
 
 def addLog(value, step=0, index=0):
@@ -217,7 +222,7 @@ def revert(step):
 			box[move['index']]['rest'] -= move['value']
 		print("Revert total(%d)" % total)
 		del log[step]
-		vacuum(True)
+		# vacuum()
 
 def vacuum(debug=False):
 	print("Vacuum started")
@@ -235,7 +240,7 @@ def vacuum(debug=False):
 					# print("Vacuum-match")
 					# pp.pprint(b)
 					# pp.pprint(move)
-					print("Vacuum Log Found index(%d)" % index)
+					if debug: print("Vacuum Log Found index(%d)" % index)
 					isLogged = True
 					isInnerLoopBreak = True
 					break
@@ -256,6 +261,7 @@ def vacuum(debug=False):
 							if debug: print("v#5")
 							move['index'] -= 1
 							if debug: print("v#6")
+				# TODO: ReIndexing Box
 				if debug:
 					print('Box Remove(%d) %d -- [DONE]' % (b['index'], isLogged))
 			except Exception as e:
@@ -276,6 +282,33 @@ def distribution():
 	result = collections.OrderedDict(sorted_x)
 	return result
 
+def zakatEstimator():
+	# TODO: Check for Positive, Complete Lunar Year after last zakat or after last deposit
+	total = balance()
+	if total <= 0:
+		return 0
+	total = 0
+	moneyLimit = MoneyLimit(2.17)
+	print("MoneyLimit: %d" % moneyLimit)
+	for b in box:
+		rest = b['rest']
+		isCycleReached = (
+			rest > 0											and
+			b['time'] + TimeCycle() <= time.time() 
+			or (
+				b['last_zakat'] != 0 							and
+				b['last_zakat'] + TimeCycle() <= time.time()
+			)
+		)
+		if isCycleReached:
+			print(b)
+			if rest >= moneyLimit:
+				cut = rest * PercentageCut()
+				print("Cut: %d out of %d" % (cut, rest))
+				total += cut
+	print("Zakat: %d" % total)
+	return total
+
 def reset():
 	print("-- RESET --")
 	global log, box
@@ -286,11 +319,12 @@ def reset():
 ########## TESTS ##########
 ###########################
 
-case0 = True
-case1 = True
-case2 = True
-case3 = True
-case4 = True
+case0 = not True
+case1 = not True
+case2 = not True
+case3 = not True
+case4 = not True
+case5 = True
 
 if case0:
 	print("############")
@@ -512,15 +546,32 @@ if case4:
 		print('Balance: %d' % balance())
 		stats()
 
-		# keys = list(log.keys())
-		# while len(log) > 0:
-		# 	index = int(random.random()*len(keys))
-		# 	step = keys[index]
-		# 	del keys[index]
-		# 	revert(step)
-		# 	check()
+		keys = list(log.keys())
+		while len(log) > 0:
+			index = int(random.random()*len(keys))
+			step = keys[index]
+			del keys[index]
+			revert(step)
+			check()
 
-		# pp.pprint(box)
-		# pp.pprint(log)
+		pp.pprint(box)
+		pp.pprint(log)
 		# vacuum()
 		# pp.pprint(log)
+
+if case5:
+	print("############")
+	print("# CASE #5  #")
+	print("############")
+
+	values = [50, 100, 250, -4000, -1000, 10000, 10000, -10, 75, -100, -100, -3, 500, -2000, 6000, -6001, 10000, -10001] 
+	for value in values:
+		if value > 0:
+			add(value, date=time.time()-TimeCycle())
+		else:
+			sub(-value)
+
+	pp.pprint(box)
+	pp.pprint(log)
+	print("Balance: %d" % balance())
+	zakatEstimator()
