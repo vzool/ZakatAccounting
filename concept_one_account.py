@@ -13,7 +13,7 @@ box = []
 # Constants
 PercentageCut 	= lambda 	: 0.025 # Zakat Cut in Lunar Year
 TimeCycle 		= lambda 	: 60*60*24*354.367056 # Lunar Year in seconds
-MoneyLimit 		= lambda x 	: 585*x # Silver Price in Local currency value
+Nisab 			= lambda x 	: 585*x # Silver Price in Local currency value
 
 def newStep():
 	step = time.time()
@@ -288,8 +288,8 @@ def zakatEstimator():
 	if total <= 0:
 		return 0
 	total = 0
-	moneyLimit = MoneyLimit(2.17)
-	print("MoneyLimit: %d" % moneyLimit)
+	nisab = Nisab(2.17)
+	print("Nisab: %d" % nisab)
 	for b in box:
 		rest = b['rest']
 		isCycleReached = (
@@ -302,7 +302,7 @@ def zakatEstimator():
 		)
 		if isCycleReached:
 			print(b)
-			if rest >= moneyLimit:
+			if rest >= nisab:
 				cut = rest * PercentageCut()
 				print("Cut: %d out of %d" % (cut, rest))
 				total += cut
